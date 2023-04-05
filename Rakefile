@@ -10,6 +10,6 @@ RuboCop::RakeTask.new
 
 task default: %i[spec rubocop]
 
-Rake::ExtensionTask.new "thumbhash" do |ext|
+Rake::ExtensionTask.new "fast_thumbhash" do |ext|
   ext.lib_dir = "lib"
 end

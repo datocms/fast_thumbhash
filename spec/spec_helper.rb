@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "thumbhash"
+require "fast_thumbhash"
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

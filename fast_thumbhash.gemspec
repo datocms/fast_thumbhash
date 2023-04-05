@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require_relative "lib/thumbhash/version"
+require_relative "lib/fast_thumbhash/version"
 
 Gem::Specification.new do |spec|
-  spec.name = "thumbhash"
-  spec.version = Thumbhash::VERSION
+  spec.name = "fast_thumbhash"
+  spec.version = FastThumbhash::VERSION
   spec.authors = ["Stefano Verna"]
   spec.email = ["s.verna@datocms.com"]
 

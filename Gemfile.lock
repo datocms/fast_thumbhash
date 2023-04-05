@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    thumbhash (0.1.0)
+    fast_thumbhash (0.1.0)
       ffi
 
 GEM
@@ -52,11 +52,12 @@ PLATFORMS
   x86_64-darwin-20
 
 DEPENDENCIES
+  bundler (~> 2.0)
+  fast_thumbhash!
   rake (~> 13.0)
   rake-compiler (~> 1.2)
   rspec (~> 3.0)
   rubocop (~> 1.21)
-  thumbhash!
 
 BUNDLED WITH
    2.3.25

@@ -2,4 +2,4 @@
 
 require "mkmf"
 
-create_makefile "thumbhash"
+create_makefile "fast_thumbhash"
