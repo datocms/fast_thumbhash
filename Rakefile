@@ -8,8 +8,11 @@ require "rubocop/rake_task"
 RSpec::Core::RakeTask.new(:spec)
 RuboCop::RakeTask.new
 
-task default: %i[spec rubocop]
+Rake::Task[:build].enhance %i[spec rubocop]
+Rake::Task[:spec].enhance %i[compile:fast_thumbhash]
 
 Rake::ExtensionTask.new "fast_thumbhash" do |ext|
   ext.lib_dir = "lib"
 end
+
+task default: %i[spec rubocop]
