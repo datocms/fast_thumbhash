@@ -6,6 +6,7 @@ source "https://rubygems.org"
 gemspec
 
 gem "bundler", "~> 2.0"
+gem "chunky_png", "~> 1.4"
 gem "rake", "~> 13.0"
 gem "rake-compiler", "~> 1.2"
 gem "rspec", "~> 3.0"
