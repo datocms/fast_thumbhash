@@ -52,6 +52,7 @@ PLATFORMS
   x86_64-darwin-20
 
 DEPENDENCIES
+  bundler (~> 2.0)
   rake (~> 13.0)
   rake-compiler (~> 1.2)
   rspec (~> 3.0)
