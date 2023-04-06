@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
 
   spec.summary = "Ruby C extension to encode/decode ThumbHash"
   spec.description = "Provides a highly optimized implementation of the ThumbHash algorithm, a compact representation of an image placeholder for a smoother loading experience"
-  spec.homepage = "https://github.com/stefanoverna/fast_thumbhash"
+  spec.homepage = "https://github.com/datocms/fast_thumbhash"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 2.6.0"
 
