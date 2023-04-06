@@ -1,5 +1,7 @@
 # FastThumbhash
 
+[![Ruby](https://github.com/datocms/fast_thumbhash/actions/workflows/main.yml/badge.svg)](https://github.com/datocms/fast_thumbhash/actions/workflows/main.yml)
+
 FastThumbhash is a Ruby gem that provides a highly optimized implementation of the [ThumbHash algorithm](https://evanw.github.io/thumbhash/), a compact representation of an image placeholder for a smoother loading experience.
 
 To achieve these benefits, FastThumbhash is implemented as a Ruby C extension, which means that the core functionality of the ThumbHash algorithm is written in C for faster execution times compared to a pure Ruby implementation. This makes FastThumbhash ideal for applications or websites that require high-performance image processing.
