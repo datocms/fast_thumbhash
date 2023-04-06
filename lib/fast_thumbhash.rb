@@ -4,24 +4,101 @@ require "ffi"
 require_relative "fast_thumbhash/version"
 
 module FastThumbhash
-  def self.thumbhash_to_rgba(thumbhash, max_size: 32)
-    binary_thumbhash_to_rgba(Base64.decode64(thumbhash), max_size: max_size)
+  def self.thumbhash_to_rgba(
+    thumbhash,
+    max_size: nil,
+    size: nil,
+    fill_mode: :no_fill,
+    fill_color: nil,
+    homogeneous_transform: nil,
+    saturation: 0
+  )
+    binary_thumbhash_to_rgba(
+      Base64.decode64(thumbhash),
+      max_size: max_size,
+      size: size,
+      fill_mode: fill_mode,
+      fill_color: fill_color,
+      homogeneous_transform: homogeneous_transform,
+      saturation: saturation
+    )
   end
 
-  def self.binary_thumbhash_to_rgba(binary_thumbhash, max_size: 32)
+  def self.binary_thumbhash_to_rgba(
+    binary_thumbhash,
+    max_size: nil,
+    size: nil,
+    fill_mode: :no_fill,
+    fill_color: nil,
+    homogeneous_transform: nil,
+    saturation: 0
+  )
+    !max_size.nil? ^ !size.nil? or
+      raise ArgumentError, "Pass only max_size, or an explicit size"
+
+    max_size.nil? || max_size < 255 or
+      raise ArgumentError, "Cannot generate images bigger then 255 pixels"
+
+    size.nil? || size.all? { |dimension| dimension < 255 } or
+      raise ArgumentError, "Cannot generate images bigger then 255 pixels"
+
+    if fill_mode == :solid
+      fill_color or
+        raise ArgumentError, "fill_color is required if fill_mode = :solid"
+    end
+
+    fill_color_pointer =
+      if fill_color
+        FFI::MemoryPointer.new(:uint8, 4).tap do |p|
+          p.write_array_of_uint8(fill_color)
+        end
+      end
+
+    transform_pointer =
+      if homogeneous_transform
+        FFI::MemoryPointer.new(:double, 6).tap do |p|
+          p.write_array_of_double(
+            [
+              homogeneous_transform[0][0],
+              homogeneous_transform[0][1],
+              homogeneous_transform[0][2],
+              homogeneous_transform[1][0],
+              homogeneous_transform[1][1],
+              homogeneous_transform[1][2]
+            ]
+          )
+        end
+      end
+
     thumbhash_pointer = FFI::MemoryPointer.new(:uint8, binary_thumbhash.size)
     thumbhash_pointer.put_array_of_uint8(0, binary_thumbhash.unpack("C*"))
 
-    thumb_size_pointer = FFI::MemoryPointer.new(:uint8, 2)
-    Library.thumb_size(thumbhash_pointer, max_size, thumb_size_pointer)
-    width, height = thumb_size_pointer.read_array_of_uint8(2)
+    width, height =
+      if size
+        size
+      else
+        thumb_size_pointer = FFI::MemoryPointer.new(:uint8, 2)
+        Library.thumb_size(thumbhash_pointer, max_size, thumb_size_pointer)
+        thumb_size_pointer.read_array_of_uint8(2)
+      end
 
     rgba_size = width * height * 4
     rgba_pointer = FFI::MemoryPointer.new(:uint8, rgba_size)
-    Library.thumbhash_to_rgba(thumbhash_pointer, width, height, rgba_pointer)
+    Library.thumbhash_to_rgba(
+      thumbhash_pointer,
+      width,
+      height,
+      fill_mode.to_sym,
+      fill_color_pointer,
+      transform_pointer,
+      saturation,
+      rgba_pointer
+    )
 
     [width, height, rgba_pointer.read_array_of_uint8(rgba_size)]
   ensure
+    fill_color_pointer&.free
+    transform_pointer&.free
     thumbhash_pointer&.free
     thumb_size_pointer&.free
     rgba_pointer&.free
@@ -54,8 +131,15 @@ module FastThumbhash
   module Library
     extend FFI::Library
     ffi_lib File.join(File.expand_path(__dir__), "fast_thumbhash.#{RbConfig::CONFIG["DLEXT"]}")
+
+    enum :fill_mode, [
+      :no_fill, 0,
+      :solid,
+      :blur
+    ]
+
     attach_function :thumb_size, %i[pointer uint8 pointer], :size_t
-    attach_function :thumbhash_to_rgba, %i[pointer uint8 uint8 pointer], :void
+    attach_function :thumbhash_to_rgba, %i[pointer uint8 uint8 fill_mode pointer pointer int pointer], :void
     attach_function :rgba_to_thumbhash, %i[uint8 uint8 pointer pointer], :void
   end
 end
