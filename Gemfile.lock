@@ -47,6 +47,7 @@ GEM
     rubocop-ast (1.28.0)
       parser (>= 3.2.1.0)
     ruby-progressbar (1.13.0)
+    thumbhash (0.0.1)
     unicode-display_width (2.4.2)
 
 PLATFORMS
@@ -60,6 +61,7 @@ DEPENDENCIES
   rake-compiler (~> 1.2)
   rspec (~> 3.0)
   rubocop (~> 1.21)
+  thumbhash (= 0.0.1)
 
 BUNDLED WITH
    2.3.25

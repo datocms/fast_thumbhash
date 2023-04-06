@@ -5,16 +5,17 @@ require "base64"
 require_relative "fast_thumbhash/version"
 
 module FastThumbhash
-  def self.thumbhash_to_rgba(thumbhash)
-    binary_thumbhash = Base64.decode64(thumbhash).unpack("C*")
+  def self.thumbhash_to_rgba(thumbhash, max_size: 32)
+    binary_thumbhash_to_rgba(Base64.decode64(thumbhash), max_size: max_size)
+  end
+
+  def self.binary_thumbhash_to_rgba(binary_thumbhash, max_size: 32)
     thumbhash_pointer = FFI::MemoryPointer.new(:uint8, binary_thumbhash.size)
-    thumbhash_pointer.put_array_of_uint8(0, binary_thumbhash)
+    thumbhash_pointer.put_array_of_uint8(0, binary_thumbhash.unpack("C*"))
 
     thumb_size_pointer = FFI::MemoryPointer.new(:uint8, 2)
-    Library.thumb_size(thumbhash_pointer, thumb_size_pointer)
+    Library.thumb_size(thumbhash_pointer, max_size, thumb_size_pointer)
     width, height = thumb_size_pointer.read_array_of_uint8(2)
-
-    puts "Size: #{width}x#{height}"
 
     rgba_size = width * height * 4
     rgba_pointer = FFI::MemoryPointer.new(:uint8, rgba_size)
@@ -28,6 +29,10 @@ module FastThumbhash
   end
 
   def self.rgba_to_thumbhash(width, height, rgba)
+    Base64.strict_encode64(rgba_to_binary_thumbhash(width, height, rgba))
+  end
+
+  def self.rgba_to_binary_thumbhash(width, height, rgba)
     rgba_pointer = FFI::MemoryPointer.new(:uint8, rgba.size)
     rgba_pointer.put_array_of_uint8(0, rgba)
 
@@ -35,11 +40,10 @@ module FastThumbhash
 
     Library.rgba_to_thumbhash(width, height, rgba_pointer, thumbhash_pointer)
 
-    binary_thumbhash = thumbhash_pointer.read_array_of_uint8(25)
+    result = thumbhash_pointer.read_array_of_uint8(25)
+    result.pop while result.last.zero?
 
-    puts binary_thumbhash.inspect
-
-    Base64.encode64(binary_thumbhash.pack("C*"))
+    result.pack("C*")
   ensure
     rgba_pointer&.free
     thumbhash_pointer&.free
@@ -48,7 +52,7 @@ module FastThumbhash
   module Library
     extend FFI::Library
     ffi_lib File.join(File.expand_path(__dir__), "fast_thumbhash.#{RbConfig::CONFIG["DLEXT"]}")
-    attach_function :thumb_size, %i[pointer pointer], :size_t
+    attach_function :thumb_size, %i[pointer uint8 pointer], :size_t
     attach_function :thumbhash_to_rgba, %i[pointer uint8 uint8 pointer], :void
     attach_function :rgba_to_thumbhash, %i[uint8 uint8 pointer pointer], :void
   end

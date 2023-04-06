@@ -44,7 +44,7 @@ encoded_channel encode_channel(double *channel, u_int8_t nx, u_int8_t ny, u_int8
       if (cx || cy)
       {
         ac[ac_length++] = f;
-        scale = fmax(scale, fabs(f));
+        scale = fmax(scale, fabsl(f));
       }
       else
       {
@@ -66,9 +66,10 @@ encoded_channel encode_channel(double *channel, u_int8_t nx, u_int8_t ny, u_int8
   return (encoded_channel){dc, ac, ac_length, scale};
 }
 
-void write_varying_factors(double *ac, int ac_size, u_int8_t *thumbhash, u_int8_t ac_start, u_int8_t *ac_index) {
+void write_varying_factors(double *ac, int ac_size, u_int8_t *thumbhash, u_int8_t *ac_index) {
   for (int i = 0; i < ac_size; i++) {
-    thumbhash[ac_start + (*ac_index >> 1)] |= (u_int8_t) round(15.0 * ac[i]) << (((*ac_index)++ & 1) << 2);
+    u_int8_t index = (*ac_index) >> 1;
+    thumbhash[index] |= (u_int8_t) roundf(15.0 * ac[i]) << (((*ac_index)++ & 1) << 2);
   }
 }
 
@@ -82,10 +83,10 @@ void rgba_to_thumbhash(u_int8_t w, u_int8_t h, u_int8_t *rgba, u_int8_t *thumbha
 
   for (int i = 0, j = 0; i < w * h; i++, j += 4)
   {
-    double alpha = (double)rgba[j + 3] / 255;
-    avg_r += alpha / 255 * rgba[j];
-    avg_g += alpha / 255 * rgba[j + 1];
-    avg_b += alpha / 255 * rgba[j + 2];
+    double alpha = (double)rgba[j + 3] / 255.0;
+    avg_r += alpha / 255.0 * rgba[j];
+    avg_g += alpha / 255.0 * rgba[j + 1];
+    avg_b += alpha / 255.0 * rgba[j + 2];
     avg_a += alpha;
   }
 
@@ -98,8 +99,8 @@ void rgba_to_thumbhash(u_int8_t w, u_int8_t h, u_int8_t *rgba, u_int8_t *thumbha
 
   bool has_alpha = avg_a < w * h;
   u_int8_t l_limit = has_alpha ? 5 : 7; // Use fewer luminance bits if there's alpha
-  u_int8_t lx = fmax(1, round((double)l_limit * w / fmax(w, h)));
-  u_int8_t ly = fmax(1, round((double)l_limit * h / fmax(w, h)));
+  u_int8_t lx = fmax(1, roundf((double)l_limit * w / fmax(w, h)));
+  u_int8_t ly = fmax(1, roundf((double)l_limit * h / fmax(w, h)));
 
   double *l = (double *)malloc(w * h * sizeof(double)); // luminance
   double *p = (double *)malloc(w * h * sizeof(double)); // yellow - blue
@@ -110,9 +111,9 @@ void rgba_to_thumbhash(u_int8_t w, u_int8_t h, u_int8_t *rgba, u_int8_t *thumbha
   for (int i = 0, j = 0; i < w * h; i++, j += 4)
   {
     double alpha = (double)rgba[j + 3] / 255;
-    double r = avg_r * (1 - alpha) + alpha / 255 * rgba[j];
-    double g = avg_g * (1 - alpha) + alpha / 255 * rgba[j + 1];
-    double b = avg_b * (1 - alpha) + alpha / 255 * rgba[j + 2];
+    double r = avg_r * (1.0 - alpha) + alpha / 255.0 * (double)rgba[j];
+    double g = avg_g * (1.0 - alpha) + alpha / 255.0 * (double)rgba[j + 1];
+    double b = avg_b * (1.0 - alpha) + alpha / 255.0 * (double)rgba[j + 2];
     l[i] = (r + g + b) / 3;
     p[i] = (r + g) / 2 - b;
     q[i] = r - g;
@@ -132,8 +133,8 @@ void rgba_to_thumbhash(u_int8_t w, u_int8_t h, u_int8_t *rgba, u_int8_t *thumbha
 
   // Write the constants
   bool is_landscape = w > h;
-  u_int32_t header24 = (u_int32_t)round(63.0 * el.dc) | ((u_int32_t)round(31.5 + 31.5 * ep.dc) << 6) | ((u_int32_t)round(31.5 + 31.5 * eq.dc) << 12) | ((u_int32_t)round(31.0 * el.scale) << 18) | (has_alpha << 23);
-  u_int32_t header16 = (is_landscape ? ly : lx) | ((u_int16_t)round(63.0 * ep.scale) << 3) | ((u_int16_t)round(63.0 * eq.scale) << 9) | (is_landscape << 15);
+  u_int32_t header24 = (u_int32_t)roundf(63.0 * el.dc) | ((u_int32_t)roundf(31.5 + 31.5 * ep.dc) << 6) | ((u_int32_t)roundf(31.5 + 31.5 * eq.dc) << 12) | ((u_int32_t)roundf(31.0 * el.scale) << 18) | (has_alpha << 23);
+  u_int32_t header16 = (is_landscape ? ly : lx) | ((u_int16_t)roundf(63.0 * ep.scale) << 3) | ((u_int16_t)roundf(63.0 * eq.scale) << 9) | (is_landscape << 15);
 
   thumbhash[0] = (uint8_t)(header24 & 0xff);
   thumbhash[1] = (uint8_t)((header24 >> 8) & 0xff);
@@ -142,18 +143,18 @@ void rgba_to_thumbhash(u_int8_t w, u_int8_t h, u_int8_t *rgba, u_int8_t *thumbha
   thumbhash[4] = (uint8_t)(header16 >> 8);
 
   if (has_alpha) {
-    thumbhash[5] = (uint8_t) round(15.0 * ea.dc) | ((uint8_t) round(15.0 * ea.scale) << 4);
+    thumbhash[5] = (uint8_t) roundf(15.0 * ea.dc) | ((uint8_t) roundf(15.0 * ea.scale) << 4);
   }
 
   u_int8_t ac_start = has_alpha ? 6 : 5;
   u_int8_t ac_index = 0;
 
-  write_varying_factors(el.ac, el.ac_size, thumbhash, ac_start, &ac_index);
-  write_varying_factors(ep.ac, ep.ac_size, thumbhash, ac_start, &ac_index);
-  write_varying_factors(eq.ac, eq.ac_size, thumbhash, ac_start, &ac_index);
+  write_varying_factors(el.ac, el.ac_size, thumbhash + ac_start, &ac_index);
+  write_varying_factors(ep.ac, ep.ac_size, thumbhash + ac_start, &ac_index);
+  write_varying_factors(eq.ac, eq.ac_size, thumbhash + ac_start, &ac_index);
 
   if (has_alpha) {
-    write_varying_factors(ea.ac, ea.ac_size, thumbhash, ac_start, &ac_index);
+    write_varying_factors(ea.ac, ea.ac_size, thumbhash + ac_start, &ac_index);
   }
 
   free(el.ac);
@@ -193,12 +194,12 @@ double thumbhash_to_approximate_aspect_ratio(u_int8_t *hash)
   return (double)lx / (double)ly;
 }
 
-void thumb_size(u_int8_t *hash, u_int8_t *size)
+void thumb_size(u_int8_t *hash, u_int8_t max_size, u_int8_t *size)
 {
   double ratio = thumbhash_to_approximate_aspect_ratio(hash);
 
-  size[0] = round(ratio > 1 ? 32 : 32 * ratio);
-  size[1] = round(ratio > 1 ? 32 / ratio : 32);
+  size[0] = roundf(ratio > 1 ? max_size : max_size * ratio);
+  size[1] = roundf(ratio > 1 ? max_size / ratio : max_size);
 }
 
 /**
