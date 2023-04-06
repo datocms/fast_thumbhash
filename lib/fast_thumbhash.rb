@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "ffi"
-require "base64"
 require_relative "fast_thumbhash/version"
 
 module FastThumbhash
@@ -33,6 +32,9 @@ module FastThumbhash
   end
 
   def self.rgba_to_binary_thumbhash(width, height, rgba)
+    (width <= 100 && height <= 100) or
+      raise ArgumentError, "Encoding an image larger than 100x100 is slow with no benefit"
+
     rgba_pointer = FFI::MemoryPointer.new(:uint8, rgba.size)
     rgba_pointer.put_array_of_uint8(0, rgba)
 
