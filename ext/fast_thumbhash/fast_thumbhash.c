@@ -3,6 +3,7 @@
 #include <math.h>
 #include <assert.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 typedef struct encoded_channel
 {

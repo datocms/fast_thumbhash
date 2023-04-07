@@ -119,6 +119,25 @@ RSpec.describe FastThumbhash do
           expect(thumb.get_pixel(0, 0)).to eq ChunkyPNG::Color(255, 0, 0, 255)
         end
       end
+
+      context "fill_mode=blur" do
+        it "works" do
+          w, h, rgba = described_class.thumbhash_to_rgba(
+            "m1sGHgRT9tenV3fKRo6Zl7bW9X2KcEc=",
+            size: [10, 25],
+            fill_mode: :blur,
+            fill_color: [255, 0, 0, 68],
+            homogeneous_transform: [
+              [1.0, 0.0, 0.0],
+              [0.0, 2.2, -0.60],
+              [0.0, 0.0, 1.0]
+            ]
+          )
+
+          thumb = ChunkyPNG::Image.new(w, h, rgba.pack("C*").unpack("N*"))
+          expect(thumb.get_pixel(0, 0)).not_to eq ChunkyPNG::Color(255, 0, 0, 68)
+        end
+      end
     end
   end
 end
