@@ -99,7 +99,7 @@ w, h, rgba = described_class.thumbhash_to_rgba(
   thumbhash,
   max_size: 32,
   fill_mode: :solid,
-  fill_color: [255, 0, 0, 100],
+  fill_color: [255, 0, 0, 100]
 )
 ```
 
