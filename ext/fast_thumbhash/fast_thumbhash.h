@@ -1,7 +1,6 @@
 #ifndef __FAST_THUMBHASH_H__
 #define __FAST_THUMBHASH_H__
 
-#include <stdio.h>
 #include <stdint.h>
 
 enum FillMode {
@@ -11,27 +10,27 @@ enum FillMode {
 };
 
 void rgba_to_thumbhash(
-  u_int8_t w,
-  u_int8_t h,
-  u_int8_t *rgba,
-  u_int8_t *thumbhash
+  uint8_t w,
+  uint8_t h,
+  uint8_t *rgba,
+  uint8_t *thumbhash
 );
 
 void thumb_size(
-  u_int8_t *hash,
-  u_int8_t max_size,
-  u_int8_t *size
+  uint8_t *hash,
+  uint8_t max_size,
+  uint8_t *size
 );
 
 void thumbhash_to_rgba(
-  u_int8_t *hash,
-  u_int8_t w,
-  u_int8_t h,
+  uint8_t *hash,
+  uint8_t w,
+  uint8_t h,
   enum FillMode fill_mode,
   uint8_t *fill_color,
   double *homogeneous_transform,
   int saturation,
-  u_int8_t *rgba
+  uint8_t *rgba
 );
 
 #endif

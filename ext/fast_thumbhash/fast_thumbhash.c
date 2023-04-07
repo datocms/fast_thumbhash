@@ -12,7 +12,7 @@ typedef struct encoded_channel
   double scale;
 } encoded_channel;
 
-encoded_channel encode_channel(double *channel, u_int8_t nx, u_int8_t ny, u_int8_t w, u_int8_t h)
+encoded_channel encode_channel(double *channel, uint8_t nx, uint8_t ny, uint8_t w, uint8_t h)
 {
   double dc = 0, scale = 0;
   double *ac = (double *)malloc(nx * ny * sizeof(double));
@@ -66,14 +66,14 @@ encoded_channel encode_channel(double *channel, u_int8_t nx, u_int8_t ny, u_int8
   return (encoded_channel){dc, ac, ac_length, scale};
 }
 
-void write_varying_factors(double *ac, int ac_size, u_int8_t *thumbhash, u_int8_t *ac_index) {
+void write_varying_factors(double *ac, int ac_size, uint8_t *thumbhash, uint8_t *ac_index) {
   for (int i = 0; i < ac_size; i++) {
-    u_int8_t index = (*ac_index) >> 1;
-    thumbhash[index] |= (u_int8_t) roundf(15.0 * ac[i]) << (((*ac_index)++ & 1) << 2);
+    uint8_t index = (*ac_index) >> 1;
+    thumbhash[index] |= (uint8_t) roundf(15.0 * ac[i]) << (((*ac_index)++ & 1) << 2);
   }
 }
 
-void rgba_to_thumbhash(u_int8_t w, u_int8_t h, u_int8_t *rgba, u_int8_t *thumbhash)
+void rgba_to_thumbhash(uint8_t w, uint8_t h, uint8_t *rgba, uint8_t *thumbhash)
 {
   assert(w <= 100);
   assert(h <= 100);
@@ -98,9 +98,9 @@ void rgba_to_thumbhash(u_int8_t w, u_int8_t h, u_int8_t *rgba, u_int8_t *thumbha
   }
 
   bool has_alpha = avg_a < w * h;
-  u_int8_t l_limit = has_alpha ? 5 : 7; // Use fewer luminance bits if there's alpha
-  u_int8_t lx = fmax(1, roundf((double)l_limit * w / fmax(w, h)));
-  u_int8_t ly = fmax(1, roundf((double)l_limit * h / fmax(w, h)));
+  uint8_t l_limit = has_alpha ? 5 : 7; // Use fewer luminance bits if there's alpha
+  uint8_t lx = fmax(1, roundf((double)l_limit * w / fmax(w, h)));
+  uint8_t ly = fmax(1, roundf((double)l_limit * h / fmax(w, h)));
 
   double *l = (double *)malloc(w * h * sizeof(double)); // luminance
   double *p = (double *)malloc(w * h * sizeof(double)); // yellow - blue
@@ -146,8 +146,8 @@ void rgba_to_thumbhash(u_int8_t w, u_int8_t h, u_int8_t *rgba, u_int8_t *thumbha
     thumbhash[5] = (uint8_t) roundf(15.0 * ea.dc) | ((uint8_t) roundf(15.0 * ea.scale) << 4);
   }
 
-  u_int8_t ac_start = has_alpha ? 6 : 5;
-  u_int8_t ac_index = 0;
+  uint8_t ac_start = has_alpha ? 6 : 5;
+  uint8_t ac_index = 0;
 
   write_varying_factors(el.ac, el.ac_size, thumbhash + ac_start, &ac_index);
   write_varying_factors(ep.ac, ep.ac_size, thumbhash + ac_start, &ac_index);
@@ -166,7 +166,7 @@ void rgba_to_thumbhash(u_int8_t w, u_int8_t h, u_int8_t *rgba, u_int8_t *thumbha
   }
 }
 
-double *decode_channel(u_int8_t nx, u_int8_t ny, double scale, u_int8_t *hash, u_int8_t ac_start, u_int8_t *ac_index)
+double *decode_channel(uint8_t nx, uint8_t ny, double scale, uint8_t *hash, uint8_t ac_start, uint8_t *ac_index)
 {
   double *ac = (double *)malloc(nx * ny * sizeof(double));
   int i = 0;
@@ -182,19 +182,19 @@ double *decode_channel(u_int8_t nx, u_int8_t ny, double scale, u_int8_t *hash, u
   return ac;
 }
 
-double thumbhash_to_approximate_aspect_ratio(u_int8_t *hash)
+double thumbhash_to_approximate_aspect_ratio(uint8_t *hash)
 {
-  u_int8_t has_alpha = (hash[2] & 0x80) != 0;
-  u_int8_t l_max = has_alpha ? 5 : 7;
-  u_int8_t l_min = hash[3] & 7;
-  u_int8_t is_landscape = (hash[4] & 0x80) != 0;
-  u_int8_t lx = is_landscape ? l_max : l_min;
-  u_int8_t ly = is_landscape ? l_min : l_max;
+  uint8_t has_alpha = (hash[2] & 0x80) != 0;
+  uint8_t l_max = has_alpha ? 5 : 7;
+  uint8_t l_min = hash[3] & 7;
+  uint8_t is_landscape = (hash[4] & 0x80) != 0;
+  uint8_t lx = is_landscape ? l_max : l_min;
+  uint8_t ly = is_landscape ? l_min : l_max;
 
   return (double)lx / (double)ly;
 }
 
-void thumb_size(u_int8_t *hash, u_int8_t max_size, u_int8_t *size)
+void thumb_size(uint8_t *hash, uint8_t max_size, uint8_t *size)
 {
   double ratio = thumbhash_to_approximate_aspect_ratio(hash);
 
@@ -320,14 +320,14 @@ void hsv2rgb(float *hsv, uint8_t *rgb)
  * Decodes a ThumbHash to an RGBA image. RGB is not be premultiplied by A.
  */
 void thumbhash_to_rgba(
-  u_int8_t *hash,
-  u_int8_t w,
-  u_int8_t h,
+  uint8_t *hash,
+  uint8_t w,
+  uint8_t h,
   enum FillMode fill_mode,
   uint8_t *fill_color,
   double *homogeneous_transform,
   int saturation,
-  u_int8_t *rgba
+  uint8_t *rgba
 )
 {
   // Read the constants
@@ -341,14 +341,14 @@ void thumbhash_to_rgba(
   double p_scale = (double)((header16 >> 3) & 63) / 63;
   double q_scale = (double)((header16 >> 9) & 63) / 63;
   bool is_landscape = (header16 >> 15) != 0;
-  u_int8_t lx = fmax(3, is_landscape ? has_alpha ? 5 : 7 : header16 & 7);
-  u_int8_t ly = fmax(3, is_landscape ? header16 & 7 : has_alpha ? 5 : 7);
+  uint8_t lx = fmax(3, is_landscape ? has_alpha ? 5 : 7 : header16 & 7);
+  uint8_t ly = fmax(3, is_landscape ? header16 & 7 : has_alpha ? 5 : 7);
   double a_dc = (double)has_alpha ? (hash[5] & 15) / 15 : 1;
   double a_scale = (double)(hash[5] >> 4) / 15;
 
   // Read the varying factors (boost saturation by 1.25x to compensate for quantization)
-  u_int8_t ac_start = has_alpha ? 6 : 5;
-  u_int8_t ac_index = 0;
+  uint8_t ac_start = has_alpha ? 6 : 5;
+  uint8_t ac_index = 0;
 
   double *l_ac = decode_channel(lx, ly, l_scale, hash, ac_start, &ac_index);
   double *p_ac = decode_channel(3, 3, p_scale * 1.25, hash, ac_start, &ac_index);
@@ -360,9 +360,9 @@ void thumbhash_to_rgba(
   double fy[7];
   u_int32_t i = 0;
 
-  for (u_int8_t ry = 0; ry < h; ry++)
+  for (uint8_t ry = 0; ry < h; ry++)
   {
-    for (u_int8_t rx = 0; rx < w; rx++, i += 4)
+    for (uint8_t rx = 0; rx < w; rx++, i += 4)
     {
 
       double px = ((double)rx + 0.5) / w;

@@ -54,7 +54,7 @@ module FastThumbhash
 
     transform_pointer =
       if homogeneous_transform
-        homogeneous_transform.size == 3 && homogeneous_transform.all? { |row| row.size == 3 } or
+        (homogeneous_transform.size == 3 && homogeneous_transform.all? { |row| row.size == 3 }) or
           raise ArgumentError, "`homogeneous_transform` option must be a 3x3 matrix"
 
         FFI::MemoryPointer.new(:double, 6).tap do |p|
@@ -79,13 +79,13 @@ module FastThumbhash
         size.length == 2 or
           raise ArgumentError, "You need to pass [width, height] to the `size` option"
 
-        size.all? { |dimension| dimension < 255 } or
-          raise ArgumentError, "Cannot generate images bigger then 255 pixels"
+        size.all? { |dimension| dimension < 100 } or
+          raise ArgumentError, "Cannot generate images bigger then 100 pixels"
 
         size
       else
-        max_size < 255 or
-          raise ArgumentError, "Cannot generate images bigger then 255 pixels"
+        max_size <= 100 or
+          raise ArgumentError, "Cannot generate images bigger then 100 pixels"
 
         thumb_size_pointer = FFI::MemoryPointer.new(:uint8, 2)
         Library.thumb_size(thumbhash_pointer, max_size, thumb_size_pointer)
