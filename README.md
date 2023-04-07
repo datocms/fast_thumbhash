@@ -56,12 +56,9 @@ This section covers additional options available for the `.thumbhash_to_rgba` me
 The max_size option allows you to request a thumbnail up to the specified size. This is the suggested option for most use cases.
 
 ```ruby
-w, h, rgba = described_class.thumbhash_to_rgba(
-  thumbhash,
-  max_size: 32
-)
+w, h, rgba = described_class.thumbhash_to_rgba(thumbhash, max_size: 32)
 
-puts [w, h].inspect # => [10, 32]
+puts [w, h].inspect # => final image is [10, 32]
 ```
 
 ##### `homogeneous_transform` and `size`
