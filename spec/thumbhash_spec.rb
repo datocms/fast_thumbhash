@@ -96,8 +96,27 @@ RSpec.describe FastThumbhash do
             saturation: -100
           )
 
-          expect(rgba[0]).to eq(rgba[1])
-          expect(rgba[1]).to eq(rgba[2])
+          r = rgba[0]
+          g = rgba[1]
+          b = rgba[2]
+
+          expect(r).to eq(g)
+          expect(g).to eq(b)
+        end
+      end
+
+      context "fill_color" do
+        it "fill_color solid fills the image with fill_color" do
+          w, h, rgba = described_class.thumbhash_to_rgba(
+            samples[1],
+            max_size: 32,
+            fill_mode: :solid,
+            fill_color: [255, 0, 0, 255]
+          )
+
+          thumb = ChunkyPNG::Image.new(w, h, rgba.pack("C*").unpack("N*"))
+
+          expect(thumb.get_pixel(0, 0)).to eq ChunkyPNG::Color(255, 0, 0, 255)
         end
       end
     end

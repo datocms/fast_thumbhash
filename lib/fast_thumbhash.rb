@@ -34,21 +34,19 @@ module FastThumbhash
     saturation: 0
   )
     !max_size.nil? ^ !size.nil? or
-      raise ArgumentError, "Pass only max_size, or an explicit size"
+      raise ArgumentError, "Pass either the `max_size` option, or an explicit `size`"
 
-    max_size.nil? || max_size < 255 or
-      raise ArgumentError, "Cannot generate images bigger then 255 pixels"
-
-    size.nil? || size.all? { |dimension| dimension < 255 } or
-      raise ArgumentError, "Cannot generate images bigger then 255 pixels"
-
-    if fill_mode == :solid
-      fill_color or
-        raise ArgumentError, "fill_color is required if fill_mode = :solid"
-    end
+    %i[solid blur no_fill].include?(fill_mode) or
+      raise ArgumentError, "Invalid `fill_mode` option"
 
     fill_color_pointer =
-      if fill_color
+      if fill_mode == :solid
+        fill_color or
+          raise ArgumentError, "`fill_color` is required if fill_mode = :solid"
+
+        fill_color.length == 4 or
+          raise ArgumentError, "You need to pass [r, g, b, a] to the `fill_color` option"
+
         FFI::MemoryPointer.new(:uint8, 4).tap do |p|
           p.write_array_of_uint8(fill_color)
         end
@@ -56,6 +54,9 @@ module FastThumbhash
 
     transform_pointer =
       if homogeneous_transform
+        homogeneous_transform.size == 3 && homogeneous_transform.all? { |row| row.size == 3 } or
+          raise ArgumentError, "`homogeneous_transform` option must be a 3x3 matrix"
+
         FFI::MemoryPointer.new(:double, 6).tap do |p|
           p.write_array_of_double(
             [
@@ -75,8 +76,17 @@ module FastThumbhash
 
     width, height =
       if size
+        size.length == 2 or
+          raise ArgumentError, "You need to pass [width, height] to the `size` option"
+
+        size.all? { |dimension| dimension < 255 } or
+          raise ArgumentError, "Cannot generate images bigger then 255 pixels"
+
         size
       else
+        max_size < 255 or
+          raise ArgumentError, "Cannot generate images bigger then 255 pixels"
+
         thumb_size_pointer = FFI::MemoryPointer.new(:uint8, 2)
         Library.thumb_size(thumbhash_pointer, max_size, thumb_size_pointer)
         thumb_size_pointer.read_array_of_uint8(2)

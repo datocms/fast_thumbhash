@@ -47,6 +47,65 @@ placeholder.save("placeholder.png", options)
 thumbhash_image_blob = "data:image/png;base64,#{Base64.strict_encode64(thumbhash_image.to_blob(options))}"
 ```
 
+### Additional Options
+
+This section covers additional options available for the `.thumbhash_to_rgba` method.
+
+##### `max_size`
+
+The max_size option allows you to request a thumbnail up to the specified size. This is the suggested option for most use cases.
+
+```ruby
+w, h, rgba = described_class.thumbhash_to_rgba(
+  thumbhash,
+  max_size: 32
+)
+
+puts [w, h].inspect # => [10, 32]
+```
+
+##### `homogeneous_transform` and `size`
+
+The `homogeneous_transform` option allows you to apply a homogeneous transformation matrix when creating a thumbnail. The transformation matrix is a 3x3 array. This can be useful for applying roto-transformations to the thumbnail. The `size` option is useful to explicitly specify the width/height of the thumbnail when combined with the `homogeneous_transform` option to create a thumbnail with specific dimensions and transformations applied to it.
+
+
+```ruby
+w, h, rgba = described_class.thumbhash_to_rgba(
+  thumbhash,
+  size: [32, 32],
+  homogeneous_transform: [
+    [0.5, 0.0, 0.5],
+    [0.0, 1.0, 0.0],
+    [0.0, 0.0, 1.0]
+  ]
+)
+```
+
+##### `saturation`
+
+The `saturation` option adjusts the saturation of the thumbnail's colors. It accepts a value in the range of -100 to +100. A value of -100 will result in a grayscale image.
+
+```ruby
+w, h, rgba = described_class.thumbhash_to_rgba(
+  thumbhash,
+  max_size: 32,
+  saturation: -100
+)
+```
+
+##### `fill_mode`
+
+The `fill_mode` option specifies how to fill in any transparent areas in your image with a color of your choice. When `fill_mode` is `:solid`, you need to pass an additional `fill_color` option to specify the actual RGBA color to use. When `fill_mode` is `:blur`, the excess space will be filled with a blurred version of the original image itself.
+
+```ruby
+w, h, rgba = described_class.thumbhash_to_rgba(
+  thumbhash,
+  max_size: 32,
+  fill_mode: :solid,
+  fill_color: [255, 0, 0, 100],
+)
+```
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
