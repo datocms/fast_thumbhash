@@ -92,7 +92,7 @@ w, h, rgba = described_class.thumbhash_to_rgba(
 
 ##### `fill_mode`
 
-The `fill_mode` option specifies how to fill in any transparent areas in your image with a color of your choice. When `fill_mode` is `:solid`, you need to pass an additional `fill_color` option to specify the actual RGBA color to use. When `fill_mode` is `:blur`, the excess space will be filled with a blurred version of the original image itself.
+The `fill_mode` option specifies how to fill in any transparent areas in your image with a color of your choice. When `fill_mode` is `:solid`, you need to pass an additional `fill_color` option to specify the actual RGBA color to use. When `fill_mode` is `:blur`, the excess space will be filled with a blurred version of the original image itself. When `fill_image` is `:clamp`, the excess space is filled with extended pixels from the edge of the image.
 
 ```ruby
 w, h, rgba = described_class.thumbhash_to_rgba(

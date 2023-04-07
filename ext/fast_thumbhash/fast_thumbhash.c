@@ -379,7 +379,7 @@ void thumbhash_to_rgba(
 
       double r, g, b, a;
 
-      if (fill_mode == BLUR) {
+      if (fill_mode == CLAMP) {
         if (x < 0)
         {
           x = 0;
@@ -398,7 +398,9 @@ void thumbhash_to_rgba(
         }
       }
 
-      if (x >= 0 && x <= 1.0 && y >= 0 && y <= 1.0) {
+      bool inside_image = x >= 0 && x <= 1.0 && y >= 0 && y <= 1.0;
+
+      if (inside_image) {
         double l = l_dc, p = p_dc, q = q_dc;
         a = a_dc;
 
@@ -453,9 +455,9 @@ void thumbhash_to_rgba(
         r = (3.0 * l - b + q) / 2.0;
         g = r - q;
       } else {
-        r = 0;
-        g = 0;
-        b = 0;
+        r = 255;
+        g = 255;
+        b = 255;
         a = 0;
       }
 
@@ -466,14 +468,17 @@ void thumbhash_to_rgba(
         fmax(0, 255 * fmin(1, a))
       };
 
-      if (fill_mode == SOLID) {
-        // Alpha-blending
-        double top_alpha = (double) top[3] / 255.0;
+      if (fill_color && fill_color[3] > 0) {
+        double top_a = (double) top[3] / 255.0;
+        double fill_color_a = (double) fill_color[3] / 255.0;
+        double inverse_top_a = 1.0 - top_a;
+        double sum_a = top_a + fill_color_a * inverse_top_a;
 
-        rgba[i]   = roundf(top[0] * top_alpha + fill_color[0] * (1.0 - top_alpha));
-        rgba[i+1] = roundf(top[1] * top_alpha + fill_color[1] * (1.0 - top_alpha));
-        rgba[i+2] = roundf(top[2] * top_alpha + fill_color[2] * (1.0 - top_alpha));
-        rgba[i+3] = roundf(top[3] * top_alpha + fill_color[3] * (1.0 - top_alpha));
+        // Alpha compositing (top over fill_color)
+        rgba[i]   = roundf(((double) top[0] * top_a + (double) fill_color[0] * fill_color_a * inverse_top_a) / sum_a);
+        rgba[i+1] = roundf(((double) top[1] * top_a + (double) fill_color[1] * fill_color_a * inverse_top_a) / sum_a);
+        rgba[i+2] = roundf(((double) top[2] * top_a + (double) fill_color[2] * fill_color_a * inverse_top_a) / sum_a);
+        rgba[i+3] = roundf(sum_a * 255.0);
       } else {
         rgba[i]   = top[0];
         rgba[i+1] = top[1];

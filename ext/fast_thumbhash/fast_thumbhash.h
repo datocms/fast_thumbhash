@@ -4,9 +4,9 @@
 #include <stdint.h>
 
 enum FillMode {
-  NO_FILL = 0,
   SOLID = 1,
   BLUR = 2,
+  CLAMP = 3,
 };
 
 void rgba_to_thumbhash(

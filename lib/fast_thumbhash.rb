@@ -8,8 +8,8 @@ module FastThumbhash
     thumbhash,
     max_size: nil,
     size: nil,
-    fill_mode: :no_fill,
-    fill_color: nil,
+    fill_mode: :solid,
+    fill_color: [255, 255, 255, 0],
     homogeneous_transform: nil,
     saturation: 0
   )
@@ -28,22 +28,19 @@ module FastThumbhash
     binary_thumbhash,
     max_size: nil,
     size: nil,
-    fill_mode: :no_fill,
-    fill_color: nil,
+    fill_mode: :solid,
+    fill_color: [255, 255, 255, 0],
     homogeneous_transform: nil,
     saturation: 0
   )
     !max_size.nil? ^ !size.nil? or
       raise ArgumentError, "Pass either the `max_size` option, or an explicit `size`"
 
-    %i[solid blur no_fill].include?(fill_mode) or
+    %i[solid blur clamp].include?(fill_mode) or
       raise ArgumentError, "Invalid `fill_mode` option"
 
     fill_color_pointer =
-      if fill_mode == :solid
-        fill_color or
-          raise ArgumentError, "`fill_color` is required if fill_mode = :solid"
-
+      if fill_color
         fill_color.length == 4 or
           raise ArgumentError, "You need to pass [r, g, b, a] to the `fill_color` option"
 
@@ -51,6 +48,8 @@ module FastThumbhash
           p.write_array_of_uint8(fill_color)
         end
       end
+
+    raise ArgumentError, "Option `fill_color` is required for :solid fill_mode" if fill_mode == :solid && fill_color.nil?
 
     transform_pointer =
       if homogeneous_transform
@@ -143,9 +142,9 @@ module FastThumbhash
     ffi_lib File.join(File.expand_path(__dir__), "fast_thumbhash.#{RbConfig::CONFIG["DLEXT"]}")
 
     enum :fill_mode, [
-      :no_fill, 0,
-      :solid,
-      :blur
+      :solid, 0,
+      :blur,
+      :clamp
     ]
 
     attach_function :thumb_size, %i[pointer uint8 pointer], :size_t
