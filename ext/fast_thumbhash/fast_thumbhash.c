@@ -379,7 +379,7 @@ void thumbhash_to_rgba(
 
       double r, g, b, a;
 
-      if (fill_mode == CLAMP) {
+      if (fill_mode == CLAMP || fill_mode == BLUR) {
         if (x < 0)
         {
           x = 0;
