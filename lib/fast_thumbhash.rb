@@ -33,29 +33,66 @@ module FastThumbhash
     homogeneous_transform: nil,
     saturation: 0
   )
-    !max_size.nil? ^ !size.nil? or
-      raise ArgumentError, "Pass either the `max_size` option, or an explicit `size`"
-
     %i[solid blur clamp].include?(fill_mode) or
       raise ArgumentError, "Invalid `fill_mode` option"
 
+    if fill_color
+      fill_color.length == 4 or
+        raise ArgumentError, "You need to pass [r, g, b, a] to the `fill_color` option"
+    end
+
+    raise ArgumentError, "Option `fill_color` is required for :solid fill_mode" if fill_mode == :solid && fill_color.nil?
+
+    if homogeneous_transform
+      (homogeneous_transform.size == 3 && homogeneous_transform.all? { |row| row.size == 3 }) or
+        raise ArgumentError, "`homogeneous_transform` option must be a 3x3 matrix"
+    end
+
+    if size
+      size.length == 2 or
+        raise ArgumentError, "You need to pass [width, height] to the `size` option"
+
+      size.all? { |dimension| dimension < 100 } or
+        raise ArgumentError, "Cannot generate images bigger then 100 pixels"
+    end
+
+    if max_size
+      max_size <= 100 or
+        raise ArgumentError, "Cannot generate images bigger then 100 pixels"
+    end
+
+    !max_size.nil? ^ !size.nil? or
+      raise ArgumentError, "Pass either the `max_size` option, or an explicit `size`"
+
+    binary_thumbhash_to_rgba!(
+      binary_thumbhash,
+      max_size: max_size,
+      size: size,
+      fill_mode: fill_mode,
+      fill_color: fill_color,
+      homogeneous_transform: homogeneous_transform,
+      saturation: saturation
+    )
+  end
+
+  def self.binary_thumbhash_to_rgba!(
+    binary_thumbhash,
+    max_size: nil,
+    size: nil,
+    fill_mode: :solid,
+    fill_color: [255, 255, 255, 0],
+    homogeneous_transform: nil,
+    saturation: 0
+  )
     fill_color_pointer =
       if fill_color
-        fill_color.length == 4 or
-          raise ArgumentError, "You need to pass [r, g, b, a] to the `fill_color` option"
-
         FFI::MemoryPointer.new(:uint8, 4).tap do |p|
           p.write_array_of_uint8(fill_color)
         end
       end
 
-    raise ArgumentError, "Option `fill_color` is required for :solid fill_mode" if fill_mode == :solid && fill_color.nil?
-
     transform_pointer =
       if homogeneous_transform
-        (homogeneous_transform.size == 3 && homogeneous_transform.all? { |row| row.size == 3 }) or
-          raise ArgumentError, "`homogeneous_transform` option must be a 3x3 matrix"
-
         FFI::MemoryPointer.new(:double, 6).tap do |p|
           p.write_array_of_double(
             [
@@ -75,17 +112,8 @@ module FastThumbhash
 
     width, height =
       if size
-        size.length == 2 or
-          raise ArgumentError, "You need to pass [width, height] to the `size` option"
-
-        size.all? { |dimension| dimension < 100 } or
-          raise ArgumentError, "Cannot generate images bigger then 100 pixels"
-
         size
       else
-        max_size <= 100 or
-          raise ArgumentError, "Cannot generate images bigger then 100 pixels"
-
         thumb_size_pointer = FFI::MemoryPointer.new(:uint8, 2)
         Library.thumb_size(thumbhash_pointer, max_size, thumb_size_pointer)
         thumb_size_pointer.read_array_of_uint8(2)
@@ -93,6 +121,7 @@ module FastThumbhash
 
     rgba_size = width * height * 4
     rgba_pointer = FFI::MemoryPointer.new(:uint8, rgba_size)
+
     Library.thumbhash_to_rgba(
       thumbhash_pointer,
       width,
@@ -100,7 +129,7 @@ module FastThumbhash
       fill_mode.to_sym,
       fill_color_pointer,
       transform_pointer,
-      saturation,
+      saturation.clamp(-100, 100),
       rgba_pointer
     )
 
