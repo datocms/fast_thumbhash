@@ -155,10 +155,9 @@ module FastThumbhash
 
     thumbhash_pointer = FFI::MemoryPointer.new(:uint8, 25)
 
-    Library.rgba_to_thumbhash(width, height, rgba_pointer, thumbhash_pointer)
+    length = Library.rgba_to_thumbhash(width, height, rgba_pointer, thumbhash_pointer)
 
-    result = thumbhash_pointer.read_array_of_uint8(25)
-    result.pop while result.last.zero?
+    result = thumbhash_pointer.read_array_of_uint8(length)
 
     result.pack("C*")
   ensure
@@ -178,6 +177,6 @@ module FastThumbhash
 
     attach_function :thumb_size, %i[pointer uint8 pointer], :size_t
     attach_function :thumbhash_to_rgba, %i[pointer uint8 uint8 fill_mode pointer pointer int pointer], :void
-    attach_function :rgba_to_thumbhash, %i[uint8 uint8 pointer pointer], :void
+    attach_function :rgba_to_thumbhash, %i[uint8 uint8 pointer pointer], :uint8
   end
 end

@@ -18,6 +18,7 @@ RSpec.describe FastThumbhash do
     rsYJLJZ4d4iAeIiAh5togIk3+A==
     4igGDIL2iWaPdIVzaXuJj4BwWA==
     EQqCDQIkrHOfVG8wBa2f3tz7CXeqZWFLdg==
+    CwgGH4Z3q3cgd2SkW3mHqVh3R8YJZYsA
   ].freeze
 
   describe ".rgba_to_thumbhash" do

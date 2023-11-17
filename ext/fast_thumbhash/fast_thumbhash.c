@@ -67,14 +67,20 @@ encoded_channel encode_channel(double *channel, uint8_t nx, uint8_t ny, uint8_t 
   return (encoded_channel){dc, ac, ac_length, scale};
 }
 
-void write_varying_factors(double *ac, int ac_size, uint8_t *thumbhash, uint8_t *ac_index) {
-  for (int i = 0; i < ac_size; i++) {
-    uint8_t index = (*ac_index) >> 1;
-    thumbhash[index] |= (uint8_t) roundf(15.0 * ac[i]) << (((*ac_index)++ & 1) << 2);
+uint8_t write_varying_factors(double *ac, int ac_size, uint8_t *thumbhash, uint8_t *ac_index)
+{
+  uint8_t index;
+
+  for (int i = 0; i < ac_size; i++)
+  {
+    index = (*ac_index) >> 1;
+    thumbhash[index] |= (uint8_t)roundf(15.0 * ac[i]) << (((*ac_index)++ & 1) << 2);
   }
+
+  return index;
 }
 
-void rgba_to_thumbhash(uint8_t w, uint8_t h, uint8_t *rgba, uint8_t *thumbhash)
+uint8_t rgba_to_thumbhash(uint8_t w, uint8_t h, uint8_t *rgba, uint8_t *thumbhash)
 {
   assert(w <= 100);
   assert(h <= 100);
@@ -143,28 +149,44 @@ void rgba_to_thumbhash(uint8_t w, uint8_t h, uint8_t *rgba, uint8_t *thumbhash)
   thumbhash[3] = (uint8_t)(header16 & 0xff);
   thumbhash[4] = (uint8_t)(header16 >> 8);
 
-  if (has_alpha) {
-    thumbhash[5] = (uint8_t) roundf(15.0 * ea.dc) | ((uint8_t) roundf(15.0 * ea.scale) << 4);
+  if (has_alpha)
+  {
+    thumbhash[5] = (uint8_t)roundf(15.0 * ea.dc) | ((uint8_t)roundf(15.0 * ea.scale) << 4);
   }
 
   uint8_t ac_start = has_alpha ? 6 : 5;
   uint8_t ac_index = 0;
 
-  write_varying_factors(el.ac, el.ac_size, thumbhash + ac_start, &ac_index);
-  write_varying_factors(ep.ac, ep.ac_size, thumbhash + ac_start, &ac_index);
-  write_varying_factors(eq.ac, eq.ac_size, thumbhash + ac_start, &ac_index);
+  uint8_t max_written_indexes[] = {0, 0, 0, 0};
 
-  if (has_alpha) {
-    write_varying_factors(ea.ac, ea.ac_size, thumbhash + ac_start, &ac_index);
+  max_written_indexes[0] = write_varying_factors(el.ac, el.ac_size, thumbhash + ac_start, &ac_index);
+  max_written_indexes[1] = write_varying_factors(ep.ac, ep.ac_size, thumbhash + ac_start, &ac_index);
+  max_written_indexes[2] = write_varying_factors(eq.ac, eq.ac_size, thumbhash + ac_start, &ac_index);
+
+  if (has_alpha)
+  {
+    max_written_indexes[3] = write_varying_factors(ea.ac, ea.ac_size, thumbhash + ac_start, &ac_index);
   }
 
   free(el.ac);
   free(ep.ac);
   free(eq.ac);
 
-  if (has_alpha) {
+  if (has_alpha)
+  {
     free(ea.ac);
   }
+
+  // store the largest number at max_written_indexes[0]
+  for (int i = 1; i < 4; ++i)
+  {
+    if (max_written_indexes[0] < max_written_indexes[i])
+    {
+      max_written_indexes[0] = max_written_indexes[i];
+    }
+  }
+
+  return max_written_indexes[0] + ac_start + 1;
 }
 
 double *decode_channel(uint8_t nx, uint8_t ny, double scale, uint8_t *hash, uint8_t ac_start, uint8_t *ac_index)
@@ -321,15 +343,14 @@ void hsv2rgb(float *hsv, uint8_t *rgb)
  * Decodes a ThumbHash to an RGBA image. RGB is not be premultiplied by A.
  */
 void thumbhash_to_rgba(
-  uint8_t *hash,
-  uint8_t w,
-  uint8_t h,
-  enum FillMode fill_mode,
-  uint8_t *fill_color,
-  double *homogeneous_transform,
-  int saturation,
-  uint8_t *rgba
-)
+    uint8_t *hash,
+    uint8_t w,
+    uint8_t h,
+    enum FillMode fill_mode,
+    uint8_t *fill_color,
+    double *homogeneous_transform,
+    int saturation,
+    uint8_t *rgba)
 {
   // Read the constants
   u_int32_t header24 = hash[0] | (hash[1] << 8) | (hash[2] << 16);
@@ -343,7 +364,8 @@ void thumbhash_to_rgba(
   double q_scale = (double)((header16 >> 9) & 63) / 63;
   bool is_landscape = (header16 >> 15) != 0;
   uint8_t lx = fmax(3, is_landscape ? has_alpha ? 5 : 7 : header16 & 7);
-  uint8_t ly = fmax(3, is_landscape ? header16 & 7 : has_alpha ? 5 : 7);
+  uint8_t ly = fmax(3, is_landscape ? header16 & 7 : has_alpha ? 5
+                                                               : 7);
   double a_dc = (double)has_alpha ? (hash[5] & 15) / 15 : 1;
   double a_scale = (double)(hash[5] >> 4) / 15;
 
@@ -380,7 +402,8 @@ void thumbhash_to_rgba(
 
       double r, g, b, a;
 
-      if (fill_mode == CLAMP || fill_mode == BLUR) {
+      if (fill_mode == CLAMP || fill_mode == BLUR)
+      {
         if (x < 0)
         {
           x = 0;
@@ -401,7 +424,8 @@ void thumbhash_to_rgba(
 
       bool inside_image = x >= 0 && x <= 1.0 && y >= 0 && y <= 1.0;
 
-      if (inside_image) {
+      if (inside_image)
+      {
         double l = l_dc, p = p_dc, q = q_dc;
         a = a_dc;
 
@@ -455,7 +479,9 @@ void thumbhash_to_rgba(
         b = l - 2.0 / 3.0 * p;
         r = (3.0 * l - b + q) / 2.0;
         g = r - q;
-      } else {
+      }
+      else
+      {
         r = 255;
         g = 255;
         b = 255;
@@ -463,35 +489,37 @@ void thumbhash_to_rgba(
       }
 
       uint_fast8_t top[4] = {
-        fmax(0, 255 * fmin(1, r)),
-        fmax(0, 255 * fmin(1, g)),
-        fmax(0, 255 * fmin(1, b)),
-        fmax(0, 255 * fmin(1, a))
-      };
+          fmax(0, 255 * fmin(1, r)),
+          fmax(0, 255 * fmin(1, g)),
+          fmax(0, 255 * fmin(1, b)),
+          fmax(0, 255 * fmin(1, a))};
 
-      if (fill_color && fill_color[3] > 0) {
-        double top_a = (double) top[3] / 255.0;
-        double fill_color_a = (double) fill_color[3] / 255.0;
+      if (fill_color && fill_color[3] > 0)
+      {
+        double top_a = (double)top[3] / 255.0;
+        double fill_color_a = (double)fill_color[3] / 255.0;
         double inverse_top_a = 1.0 - top_a;
         double sum_a = top_a + fill_color_a * inverse_top_a;
 
         // Alpha compositing (top over fill_color)
-        rgba[i]   = roundf(((double) top[0] * top_a + (double) fill_color[0] * fill_color_a * inverse_top_a) / sum_a);
-        rgba[i+1] = roundf(((double) top[1] * top_a + (double) fill_color[1] * fill_color_a * inverse_top_a) / sum_a);
-        rgba[i+2] = roundf(((double) top[2] * top_a + (double) fill_color[2] * fill_color_a * inverse_top_a) / sum_a);
-        rgba[i+3] = roundf(sum_a * 255.0);
-      } else {
-        rgba[i]   = top[0];
-        rgba[i+1] = top[1];
-        rgba[i+2] = top[2];
-        rgba[i+3] = top[3];
+        rgba[i] = roundf(((double)top[0] * top_a + (double)fill_color[0] * fill_color_a * inverse_top_a) / sum_a);
+        rgba[i + 1] = roundf(((double)top[1] * top_a + (double)fill_color[1] * fill_color_a * inverse_top_a) / sum_a);
+        rgba[i + 2] = roundf(((double)top[2] * top_a + (double)fill_color[2] * fill_color_a * inverse_top_a) / sum_a);
+        rgba[i + 3] = roundf(sum_a * 255.0);
+      }
+      else
+      {
+        rgba[i] = top[0];
+        rgba[i + 1] = top[1];
+        rgba[i + 2] = top[2];
+        rgba[i + 3] = top[3];
       }
 
       if (saturation)
       {
         float hsv[3] = {0};
         rgb2hsv(rgba + i, hsv);
-        float mult = ((float) saturation + 100.0f) / 200.0f * 1.4f;
+        float mult = ((float)saturation + 100.0f) / 200.0f * 1.4f;
         hsv[1] = fminf(fmaxf(hsv[1] * mult, 0), 1.0f);
         hsv2rgb(hsv, rgba + i);
       }
