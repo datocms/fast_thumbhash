@@ -141,7 +141,7 @@ uint8_t rgba_to_thumbhash(uint8_t w, uint8_t h, uint8_t *rgba, uint8_t *thumbhas
   // Write the constants
   bool is_landscape = w > h;
   uint32_t header24 = (uint32_t)roundf(63.0 * el.dc) | ((uint32_t)roundf(31.5 + 31.5 * ep.dc) << 6) | ((uint32_t)roundf(31.5 + 31.5 * eq.dc) << 12) | ((uint32_t)roundf(31.0 * el.scale) << 18) | (has_alpha << 23);
-  uint32_t header16 = (is_landscape ? ly : lx) | ((u_int16_t)roundf(63.0 * ep.scale) << 3) | ((u_int16_t)roundf(63.0 * eq.scale) << 9) | (is_landscape << 15);
+  uint32_t header16 = (is_landscape ? ly : lx) | ((uint16_t)roundf(63.0 * ep.scale) << 3) | ((uint16_t)roundf(63.0 * eq.scale) << 9) | (is_landscape << 15);
 
   thumbhash[0] = (uint8_t)(header24 & 0xff);
   thumbhash[1] = (uint8_t)((header24 >> 8) & 0xff);
