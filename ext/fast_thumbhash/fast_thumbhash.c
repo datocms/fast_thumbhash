@@ -140,8 +140,8 @@ uint8_t rgba_to_thumbhash(uint8_t w, uint8_t h, uint8_t *rgba, uint8_t *thumbhas
 
   // Write the constants
   bool is_landscape = w > h;
-  u_int32_t header24 = (u_int32_t)roundf(63.0 * el.dc) | ((u_int32_t)roundf(31.5 + 31.5 * ep.dc) << 6) | ((u_int32_t)roundf(31.5 + 31.5 * eq.dc) << 12) | ((u_int32_t)roundf(31.0 * el.scale) << 18) | (has_alpha << 23);
-  u_int32_t header16 = (is_landscape ? ly : lx) | ((u_int16_t)roundf(63.0 * ep.scale) << 3) | ((u_int16_t)roundf(63.0 * eq.scale) << 9) | (is_landscape << 15);
+  uint32_t header24 = (uint32_t)roundf(63.0 * el.dc) | ((uint32_t)roundf(31.5 + 31.5 * ep.dc) << 6) | ((uint32_t)roundf(31.5 + 31.5 * eq.dc) << 12) | ((uint32_t)roundf(31.0 * el.scale) << 18) | (has_alpha << 23);
+  uint32_t header16 = (is_landscape ? ly : lx) | ((u_int16_t)roundf(63.0 * ep.scale) << 3) | ((u_int16_t)roundf(63.0 * eq.scale) << 9) | (is_landscape << 15);
 
   thumbhash[0] = (uint8_t)(header24 & 0xff);
   thumbhash[1] = (uint8_t)((header24 >> 8) & 0xff);
@@ -353,8 +353,8 @@ void thumbhash_to_rgba(
     uint8_t *rgba)
 {
   // Read the constants
-  u_int32_t header24 = hash[0] | (hash[1] << 8) | (hash[2] << 16);
-  u_int32_t header16 = hash[3] | (hash[4] << 8);
+  uint32_t header24 = hash[0] | (hash[1] << 8) | (hash[2] << 16);
+  uint32_t header16 = hash[3] | (hash[4] << 8);
   double l_dc = (double)(header24 & 63) / 63;
   double p_dc = (double)((header24 >> 6) & 63) / 31.5 - 1;
   double q_dc = (double)((header24 >> 12) & 63) / 31.5 - 1;
@@ -381,7 +381,7 @@ void thumbhash_to_rgba(
   // Decode using the DCT into RGB
   double fx[7];
   double fy[7];
-  u_int32_t i = 0;
+  uint32_t i = 0;
 
   for (uint8_t ry = 0; ry < h; ry++)
   {
