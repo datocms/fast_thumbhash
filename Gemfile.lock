@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    fast_thumbhash (0.7.1)
+    fast_thumbhash (0.7.2)
       ffi
 
 GEM
